@@ -37,6 +37,7 @@ def main():
     3. total_duration: this is the total duration of data that will be requested.
     Lastly if your requests are denied by binance api, you can add a sleep time between each request using sleep_time parameter.
     '''
+    symbol = "BTCUSDT"
     total_duration = 30*24*60*60 # 30 days
     end_time = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) # the script ends data at 00:00:00 of the current day
     start_time = end_time - datetime.timedelta(seconds=total_duration)
@@ -54,17 +55,19 @@ def main():
         cnt+=1
         for i in range(iterations):
             query_end = (query_start + datetime.timedelta(seconds=query_duration))   
-            resp = get_data(query_start,query_end,"BTCUSDT",1,1000)
+            resp = get_data(query_start,query_end,symbol,1,1000)
             temp_df = pd.concat([temp_df,pd.DataFrame(resp.json(),columns=df_cols)],axis=0)
             query_start = query_end
             if sleep_time > 0:
                 time.sleep(sleep_time)
         query_end = start_time + datetime.timedelta(seconds=chunk_duration)
-        resp = get_data(query_start,query_end,"BTCUSDT",1,1000)
+        resp = get_data(query_start,query_end,symbol,1,1000)
         temp_df = pd.concat([temp_df,pd.DataFrame(resp.json(),columns=df_cols)],axis=0)
-        temp_df["openTime"] = pd.to_datetime(temp_df['openTime'],dayfirst=True,unit='ms',utc=True)
-        temp_df["closeTime"] = pd.to_datetime(temp_df['closeTime'],dayfirst=True,unit='ms',utc=True)
-        temp_df.to_csv("data/"+str(start_time.isoformat())+".csv",index=False)
+        temp_df["openTime"] = pd.to_datetime(temp_df['openTime'],dayfirst=True,unit='ms',utc=True).astype(str)
+        temp_df["closeTime"] = pd.to_datetime(temp_df['closeTime'],dayfirst=True,unit='ms',utc=True).astype(str)
+
+        print(temp_df.iloc[0])
+        temp_df.to_json("data/binance/"+str(start_time.isoformat())+".json",orient="records",lines=True)
         print("chunk:", cnt,"start_time",start_time.isoformat(),"end_time",query_end.isoformat())
         start_time=start_time + datetime.timedelta(seconds=chunk_duration)
 
